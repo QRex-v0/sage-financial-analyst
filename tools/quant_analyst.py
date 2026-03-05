@@ -28,10 +28,12 @@ def quant_analysis_summary(content: str, instructions: str) -> str:
             }
         ]
     )
+    log.debug("🧠 MiniMax input | instructions: %s\n--- content ---\n%s", instructions, content)
     for block in response.content:
         if block.type == "thinking":
-            log.info("[quant_analyst] thinking:\n%s", block.thinking)
+            log.info("[quant_analyst] 💭 thinking:\n%s", block.thinking)
+            log.debug("[quant_analyst] 💭 thinking (full):\n%s", block.thinking)
         elif block.type == "text":
-            log.info("[quant_analyst] text:\n%s", block.text)
+            log.info("[quant_analyst] 💬 text:\n%s", block.text)
             return block.text
     return "NOT FOUND: summarizer returned no text content."

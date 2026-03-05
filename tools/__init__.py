@@ -85,6 +85,7 @@ TOOLS: list[ToolParam] = [
 
 
 def run_tool(name: str, input: dict, web_fetch_count: list) -> str:
+    log.debug("🔧 tool call: %s | input: %s", name, input)
     if name == "search":
         log.info("🔍 search: %s", input["query"])
         result = search(input["query"])
@@ -110,4 +111,5 @@ def run_tool(name: str, input: dict, web_fetch_count: list) -> str:
     else:
         return f"Unknown tool: {name}"
     log.info("✅ result: %d chars | preview: %s", len(result), result[:200].replace("\n", " ") + ("..." if len(result) > 200 else ""))
+    log.debug("✅ result (full):\n%s", result)
     return result
