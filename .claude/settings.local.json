@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(EDGAR_IDENTITY=\"sage sage@sage.com\" .venv/bin/python -c \"\nfrom edgar.entity import Company\nc = Company\\('NVDA'\\)\nf = c.get_filings\\(form='10-K'\\).latest\\(1\\)\nxbrl = f.xbrl\\(\\)\nprint\\(type\\(xbrl\\)\\)\nstmts = xbrl.get_all_statements\\(\\)\nprint\\(stmts\\)\n\" 2>&1 | tail -20)"
+      "Bash(EDGAR_IDENTITY=\"sage sage@sage.com\" .venv/bin/python -c \"\nfrom edgar.entity import Company\nc = Company\\('NVDA'\\)\nf = c.get_filings\\(form='10-K'\\).latest\\(1\\)\nxbrl = f.xbrl\\(\\)\nprint\\(type\\(xbrl\\)\\)\nstmts = xbrl.get_all_statements\\(\\)\nprint\\(stmts\\)\n\" 2>&1 | tail -20)",
+      "Bash(EDGAR_IDENTITY=\"sage sage@sage.com\" .venv/bin/python -c \"\nfrom edgar.entity import Company\nc = Company\\('NVDA'\\)\nf = c.get_filings\\(form='10-K'\\).latest\\(1\\)\nxbrl = f.xbrl\\(\\)\nstmt = xbrl.get_statement_by_type\\('IncomeStatement'\\)\nprint\\(type\\(stmt\\)\\)\nprint\\(dir\\(stmt\\)\\)\n\" 2>&1 | tail -5)",
+      "Bash(EDGAR_IDENTITY=\"sage sage@sage.com\" .venv/bin/python -c \"\nfrom edgar.entity import Company\nc = Company\\('NVDA'\\)\nf = c.get_filings\\(form='10-K'\\).latest\\(1\\)\nxbrl = f.xbrl\\(\\)\nstmt = xbrl.get_statement_by_type\\('IncomeStatement'\\)\nprint\\(stmt.keys\\(\\)\\)\nrole = list\\(stmt.keys\\(\\)\\)[0]\ns = stmt[role]\nprint\\(type\\(s\\)\\)\nprint\\([m for m in dir\\(s\\) if not m.startswith\\('_'\\)]\\)\n\" 2>&1 | tail -5)",
+      "Bash(EDGAR_IDENTITY=\"sage sage@sage.com\" .venv/bin/python -c \"\nfrom edgar.entity import Company\nc = Company\\('NVDA'\\)\nf = c.get_filings\\(form='10-K'\\).latest\\(1\\)\nxbrl = f.xbrl\\(\\)\nstmt = xbrl.get_statement_by_type\\('IncomeStatement'\\)\nprint\\(stmt\\)\n\" 2>&1 | tail -10)",
+      "Bash(EDGAR_IDENTITY=\"sage sage@sage.com\" .venv/bin/python -c \"\nfrom edgar.company_reports import TenK\nprint\\([m for m in dir\\(TenK\\) if not m.startswith\\('_'\\)]\\)\n\")",
+      "Bash(EDGAR_IDENTITY=\"sage sage@sage.com\" .venv/bin/python -c \"\nfrom edgar.company_reports import TenQ\nprint\\([m for m in dir\\(TenQ\\) if not m.startswith\\('_'\\)]\\)\n\")",
+      "Bash(EDGAR_IDENTITY=\"sage sage@sage.com\" .venv/bin/python -c \"\nfrom edgar.entity import Company\nfrom edgar.company_reports import TenQ\nc = Company\\('NVDA'\\)\nf = c.get_filings\\(form='10-Q'\\).latest\\(1\\)\nq = TenQ\\(f\\)\nprint\\(type\\(q.items\\)\\)\nprint\\(q.items\\)\n\" 2>&1 | tail -10)",
+      "Bash(EDGAR_IDENTITY=\"sage sage@sage.com\" .venv/bin/python -c \"\nfrom edgar.entity import Company\nfrom edgar.company_reports import TenQ\nc = Company\\('NVDA'\\)\nf = c.get_filings\\(form='10-Q'\\).latest\\(1\\)\nq = TenQ\\(f\\)\nresult = q.get_item_with_part\\('Part I', 'Item 2'\\)\nprint\\(type\\(result\\)\\)\nprint\\(str\\(result\\)[:300]\\)\n\" 2>&1 | tail -10)"
     ]
   }
 }

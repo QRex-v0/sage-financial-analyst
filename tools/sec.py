@@ -15,6 +15,39 @@ def _get_company(ticker: str) -> Company:
     return TICKER_MAP[ticker]
 
 
+def _format_statement(stmt: dict) -> str:
+    """Format a statement dict from get_statement_by_type into a readable table."""
+    periods = stmt.get("periods", {})
+    period_keys = list(periods.keys())
+    period_labels = [periods[k]["label"] for k in period_keys]
+
+    header = f"{'Line Item':<50} " + "  ".join(f"{lbl:>30}" for lbl in period_labels)
+    rows = [header, "-" * len(header)]
+
+    for item in stmt.get("data", []):
+        if item.get("is_abstract"):
+            rows.append(f"\n{item['label'].upper()}")
+            continue
+        if not item.get("has_values"):
+            continue
+        indent = "  " * item.get("level", 0)
+        label = (indent + item["label"])[:50]
+        values = item.get("values", {})
+        unit = list(item.get("units", {}).values())[0] if item.get("units") else "usd"
+        row = f"{label:<50}"
+        for pk in period_keys:
+            val = values.get(pk)
+            if val is None:
+                row += f"  {'N/A':>30}"
+            elif unit == "usdPerShare":
+                row += f"  {val:>30.2f}"
+            else:
+                row += f"  {val/1e9:>29.2f}B"
+        rows.append(row)
+
+    return "\n".join(rows)
+
+
 def get_financials(ticker: str) -> str:
     """Income statement, balance sheet, and cash flow from the latest 10-K (XBRL)."""
     company = _get_company(ticker)
@@ -28,13 +61,14 @@ def get_financials(ticker: str) -> str:
 
     sections = [f"# Financial Statements for {ticker} — Period: {filing.period_of_report}\n"]
 
-    for label, stmt in [
-        ("Income Statement", xbrl.income_statement()),
-        ("Balance Sheet", xbrl.balance_sheet()),
-        ("Cash Flow Statement", xbrl.cashflow_statement()),
+    for label, stmt_type in [
+        ("Income Statement", "IncomeStatement"),
+        ("Balance Sheet", "BalanceSheet"),
+        ("Cash Flow Statement", "CashFlowStatement"),
     ]:
+        stmt = xbrl.get_statement_by_type(stmt_type)
         if stmt:
-            sections.append(f"## {label}\n{stmt.to_dataframe().to_string()}\n")
+            sections.append(f"## {label}\n{_format_statement(stmt)}\n")
 
     return "\n".join(sections)
 
@@ -51,11 +85,11 @@ def get_annual_report(ticker: str) -> str:
 
     parts = [f"# 10-K Annual Report for {ticker} — Period: {period}\n"]
 
-    business = ten_k.item_1
+    business = ten_k.business
     if business:
         parts.append(f"## Item 1: Business\n{business}\n")
 
-    mda = ten_k.item_7
+    mda = ten_k.management_discussion
     if mda:
         parts.append(f"## Item 7: Management's Discussion and Analysis\n{mda}\n")
 
@@ -75,7 +109,7 @@ def get_quarterly_report(ticker: str) -> str:
     ten_q = TenQ(filing)
     period = filing.period_of_report
 
-    mda = ten_q.item_2
+    mda = ten_q.get_item_with_part("Part I", "Item 2")
     if not mda:
         return f"Could not extract MD&A from {ticker}'s latest 10-Q (period: {period})"
 

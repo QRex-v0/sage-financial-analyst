@@ -4,27 +4,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Environment Setup
 
-This project uses `uv` as the Python package manager with a `.venv` virtual environment (Python 3.12).
+Uses `uv` with a `.venv` virtual environment (Python 3.12).
 
-Required environment variables (via `.env` file):
-- `ANTHROPIC_API_KEY` — Claude API key (used by `AsyncAnthropic()` automatically)
-- `HYPERBROWSER_API_KEY` — Hyperbrowser API key (used by `AsyncHyperbrowser()` automatically)
+Required `.env` variables:
+- `ANTHROPIC_API_KEY` — picked up automatically by `Anthropic()`
+- `HYPERBROWSER_API_KEY` — picked up automatically by `Hyperbrowser()`
+- `EDGAR_IDENTITY` — required by SEC, format: `"Name email@example.com"`
 
-Run the main script:
-```
+```bash
+uv pip install -r requirements.txt
 uv run python basic.py
 ```
 
 ## Architecture
 
-**`basic.py`** — Entry point. Creates an `AsyncAnthropic` client, defines two Claude tools (`search`, `web_fetch`), and invokes the model with a user prompt. The model uses tools iteratively to research and respond.
+**`basic.py`** — Entry point. Runs a synchronous agentic loop: calls Claude Sonnet, processes `tool_use` blocks by dispatching to `run_tool`, appends `tool_result` messages, and loops until `stop_reason == "end_turn"`. Has a `MAX_WEB_FETCHES` constant to limit expensive page fetches per run. Retries on `RateLimitError` with a 60s sleep.
 
-**`tools/hb.py`** — Thin async wrapper around the `hyperbrowser` library. Provides:
-- `search(query)` — Web search via `AsyncHyperbrowser.web.search()`
-- `web_fetch(url)` — Page fetch with stealth mode, returns markdown content
+**`tools/__init__.py`** — Central tool registry. Exports `TOOLS` (the list passed to the API) and `run_tool(name, input, web_fetch_count)`. All new tools must be registered here in both places.
 
-## Tool Use Pattern
+**`tools/hb.py`** — Hyperbrowser wrapper: `search(query)` and `web_fetch_and_summarize(url, instructions)`. The summarize variant calls `quant_analysis_summary` to extract only the relevant info before returning to the main model.
 
-`basic.py` uses Claude's tool use feature but does **not** implement an agentic loop — it makes a single API call and prints the raw response JSON. To handle multi-turn tool use (where Claude calls tools and the results feed back into the conversation), an agentic loop must be added that processes `tool_use` content blocks, calls the corresponding functions in `tools/hb.py`, and sends `tool_result` messages back.
+**`tools/sec.py`** — SEC EDGAR tools via `edgartools`. Uses `xbrl.get_statement_by_type()` for financial data (not `.income_statement()` — that method doesn't exist). TenK attributes are `.business` and `.management_discussion` (not `item_1`/`item_7`). TenQ uses `.get_item_with_part("Part I", "Item 2")` for MD&A.
 
-The `system` prompt in `basic.py` is currently a placeholder (`"QINYU FILL OUT"`).
+**`tools/quant_analyst.py`** — MiniMax submodel that acts as a cheap page content extractor. Takes raw markdown content + specific extraction instructions, returns only what was asked for.
+
+**`models/minimax.py`** — MiniMax API client.
+
+## Key Design Decisions
+
+- `web_fetch_and_summarize` replaced raw `web_fetch` as the exposed tool — raw pages are too large to feed directly to the main model
+- `MAX_WEB_FETCHES` in `tools/__init__.py` controls how many page fetches are allowed per run (for cost/rate-limit control)
+- The two-tier model pattern: Sonnet for reasoning, MiniMax for cheap data extraction

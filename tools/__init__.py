@@ -86,28 +86,28 @@ TOOLS: list[ToolParam] = [
 
 def run_tool(name: str, input: dict, web_fetch_count: list) -> str:
     if name == "search":
-        log.info("  >> search: %s", input["query"])
+        log.info("🔍 search: %s", input["query"])
         result = search(input["query"])
     elif name == "web_fetch_and_summarize":
         if web_fetch_count[0] >= MAX_WEB_FETCHES:
-            log.info("  >> web_fetch_and_summarize SKIPPED (limit %d reached): %s", MAX_WEB_FETCHES, input["url"])
+            log.info("🚫 web_fetch_and_summarize SKIPPED (limit %d reached): %s", MAX_WEB_FETCHES, input["url"])
             return f"Skipped fetching {input['url']} (web_fetch limit of {MAX_WEB_FETCHES} reached)"
         web_fetch_count[0] += 1
-        log.info("  >> web_fetch_and_summarize [%d/%d]: %s | instructions: %s", web_fetch_count[0], MAX_WEB_FETCHES, input["url"], input["instructions"])
+        log.info("🌐 web_fetch_and_summarize [%d/%d]: %s\n   📋 instructions: %s", web_fetch_count[0], MAX_WEB_FETCHES, input["url"], input["instructions"])
         result = web_fetch_and_summarize(input["url"], input["instructions"])
     elif name == "get_financials":
-        log.info("  >> get_financials: %s", input["ticker"])
+        log.info("💰 get_financials: %s", input["ticker"])
         result = get_financials(input["ticker"])
     elif name == "get_annual_report":
-        log.info("  >> get_annual_report: %s", input["ticker"])
+        log.info("📄 get_annual_report: %s", input["ticker"])
         result = get_annual_report(input["ticker"])
     elif name == "get_quarterly_report":
-        log.info("  >> get_quarterly_report: %s", input["ticker"])
+        log.info("📊 get_quarterly_report: %s", input["ticker"])
         result = get_quarterly_report(input["ticker"])
     elif name == "get_recent_earnings":
-        log.info("  >> get_recent_earnings: %s", input["ticker"])
+        log.info("📢 get_recent_earnings: %s", input["ticker"])
         result = get_recent_earnings(input["ticker"])
     else:
         return f"Unknown tool: {name}"
-    log.info("  << result: %d chars | preview: %s", len(result), result[:200].replace("\n", " ") + ("..." if len(result) > 200 else ""))
+    log.info("✅ result: %d chars | preview: %s", len(result), result[:200].replace("\n", " ") + ("..." if len(result) > 200 else ""))
     return result

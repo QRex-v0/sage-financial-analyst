@@ -56,11 +56,11 @@ def main():
             except RateLimitError:
                 log.warning("Rate limited, waiting 60s before retry...")
                 time.sleep(60)
-        log.info("stop_reason: %s", response.stop_reason)
+        log.info("🛑 stop_reason: %s", response.stop_reason)
 
         for block in response.content:
             if hasattr(block, "text") and block.text:
-                log.info("[ model ]\n%s", block.text)
+                log.info("🤖 Model:\n%s", block.text)
 
         messages.append({"role": "assistant", "content": response.content})
 
@@ -82,7 +82,11 @@ def main():
                     "content": result,
                 })
 
-        messages.append({"role": "user", "content": tool_results})
+        if not tool_results:
+            log.warning("⚠️  No tool results produced this turn — asking model to proceed with available data")
+            messages.append({"role": "user", "content": "No additional data could be fetched. Please proceed with the information already gathered."})
+        else:
+            messages.append({"role": "user", "content": tool_results})
 
 
 if __name__ == "__main__":
