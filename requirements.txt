@@ -1,0 +1,4 @@
+anthropic
+edgartools
+hyperbrowser
+python-dotenv

@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(EDGAR_IDENTITY=\"sage sage@sage.com\" .venv/bin/python -c \"\nfrom edgar.entity import Company\nc = Company\\('NVDA'\\)\nf = c.get_filings\\(form='10-K'\\).latest\\(1\\)\nxbrl = f.xbrl\\(\\)\nprint\\(type\\(xbrl\\)\\)\nstmts = xbrl.get_all_statements\\(\\)\nprint\\(stmts\\)\n\" 2>&1 | tail -20)"
+    ]
+  }
+}
