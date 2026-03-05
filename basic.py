@@ -3,9 +3,10 @@ import time
 from pathlib import Path
 
 from dotenv import load_dotenv
-from anthropic import Anthropic, RateLimitError
+from anthropic import RateLimitError
 
 from utils.logging_setup import setup_logging, section
+from models import chat, DEFAULT_MODEL, DEFAULT_MAX_TOKENS
 from tools import TOOLS, run_tool
 
 load_dotenv()
@@ -14,8 +15,8 @@ log = logging.getLogger(__name__)
 run_prefix = setup_logging()
 
 # --- Config ---
-MODEL = "claude-sonnet-4-6"
-MAX_TOKENS = 1024
+MODEL = DEFAULT_MODEL
+MAX_TOKENS = DEFAULT_MAX_TOKENS
 MAX_WEB_FETCHES = 1
 
 QUERY = (
@@ -40,10 +41,6 @@ SYSTEM_PROMPT = (
     "valuation, and a final buy/hold/sell recommendation with a price target rationale."
 )
 
-# --- Agent ---
-ant = Anthropic()
-
-
 def save_report(report: str) -> None:
     report_path = Path(f"{run_prefix}_report.md")
     report_path.write_text(report)
@@ -66,9 +63,9 @@ def main() -> None:
 
         while True:
             try:
-                response = ant.messages.create(
-                    system=SYSTEM_PROMPT,
+                response = chat(
                     messages=messages,
+                    system=SYSTEM_PROMPT,
                     tools=TOOLS,
                     model=MODEL,
                     max_tokens=MAX_TOKENS,
