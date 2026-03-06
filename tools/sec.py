@@ -6,17 +6,16 @@ from edgar.company_reports import TenK, TenQ
 
 set_identity(os.environ.get("EDGAR_IDENTITY", "Research Agent research@example.com"))
 
+_company_cache: dict[str, Company] = {}
 
-TICKER_MAP = dict[str, Company]() 
 
 def _get_company(ticker: str) -> Company:
-    if ticker not in TICKER_MAP:
-        TICKER_MAP[ticker] = Company(ticker)
-    return TICKER_MAP[ticker]
+    if ticker not in _company_cache:
+        _company_cache[ticker] = Company(ticker)
+    return _company_cache[ticker]
 
 
 def _format_statement(stmt: dict) -> str:
-    """Format a statement dict from get_statement_by_type into a readable table."""
     periods = stmt.get("periods", {})
     period_keys = list(periods.keys())
     period_labels = [periods[k]["label"] for k in period_keys]
@@ -51,7 +50,7 @@ def _format_statement(stmt: dict) -> str:
 def get_financials(ticker: str) -> str:
     """Income statement, balance sheet, and cash flow from the latest 10-K (XBRL)."""
     company = _get_company(ticker)
-    filing = company.get_filings(form="10-K").latest(1)
+    filing = company.latest("10-K")
     if not filing:
         return f"No 10-K found for {ticker}"
 
@@ -59,7 +58,18 @@ def get_financials(ticker: str) -> str:
     if not xbrl:
         return f"No XBRL data available for {ticker}'s latest 10-K (period: {filing.period_of_report})"
 
-    sections = [f"# Financial Statements for {ticker} — Period: {filing.period_of_report}\n"]
+    shares = company.shares_outstanding
+    public_float = company.public_float
+    industry = company.industry
+
+    header_lines = [f"# Financial Statements for {ticker} — Period: {filing.period_of_report}"]
+    if industry:
+        header_lines.append(f"Industry: {industry}")
+    if shares:
+        header_lines.append(f"Shares Outstanding: {shares/1e9:.2f}B")
+    if public_float:
+        header_lines.append(f"Public Float: ${public_float/1e9:.1f}B")
+    sections = ["\n".join(header_lines) + "\n"]
 
     for label, stmt_type in [
         ("Income Statement", "IncomeStatement"),
@@ -76,13 +86,12 @@ def get_financials(ticker: str) -> str:
 def get_annual_report(ticker: str) -> str:
     """Business overview (Item 1) and MD&A (Item 7) from the latest 10-K."""
     company = _get_company(ticker)
-    filing = company.get_filings(form="10-K").latest(1)
+    filing = company.latest("10-K")
     if not filing:
         return f"No 10-K found for {ticker}"
 
     ten_k = TenK(filing)
     period = filing.period_of_report
-
     parts = [f"# 10-K Annual Report for {ticker} — Period: {period}\n"]
 
     business = ten_k.business
@@ -102,7 +111,7 @@ def get_annual_report(ticker: str) -> str:
 def get_quarterly_report(ticker: str) -> str:
     """MD&A from the latest 10-Q."""
     company = _get_company(ticker)
-    filing = company.get_filings(form="10-Q").latest(1)
+    filing = company.latest("10-Q")
     if not filing:
         return f"No 10-Q found for {ticker}"
 
@@ -129,7 +138,6 @@ def get_recent_earnings(ticker: str) -> str:
         if text and any(kw in text.lower() for kw in ("earnings", "revenue", "net income", "quarterly results", "financial results")):
             return f"# 8-K Filing for {ticker} — Filed: {filing.filing_date}\n\n{text}"
 
-    # Fall back to the most recent 8-K regardless
     filing = candidates[0]
     text = filing.text() or "No text content available"
     return f"# 8-K Filing for {ticker} — Filed: {filing.filing_date}\n\n{text}"
