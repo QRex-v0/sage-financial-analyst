@@ -3,13 +3,12 @@ import time
 from pathlib import Path
 
 from dotenv import load_dotenv
-from anthropic import RateLimitError
+load_dotenv()  # must run before imports that read env vars at module level
 
-from utils.logging_setup import setup_logging, section
-from models import chat, DEFAULT_MODEL, DEFAULT_MAX_TOKENS
-from tools import TOOLS, run_tool
-
-load_dotenv()
+from anthropic import RateLimitError  # noqa: E402
+from utils.logging_setup import setup_logging, section  # noqa: E402
+from models import chat, DEFAULT_MODEL, DEFAULT_MAX_TOKENS  # noqa: E402
+from tools import TOOLS, run_tool  # noqa: E402
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 log = logging.getLogger(__name__)
 run_prefix = setup_logging()
@@ -75,7 +74,11 @@ def main() -> None:
                 log.warning("Rate limited, waiting 60s before retry...")
                 time.sleep(60)
 
-        log.info("🛑 stop_reason: %s", response.stop_reason)
+        if response.stop_reason == "tool_use":
+            tool_names = [block.name for block in response.content if block.type == "tool_use"]
+            log.info("🛑 stop_reason: tool_use → %s", ", ".join(tool_names))
+        else:
+            log.info("🛑 stop_reason: %s", response.stop_reason)
 
         for block in response.content:
             if hasattr(block, "text") and block.text:

@@ -1,23 +1,9 @@
 import os
 from anthropic import Anthropic
 
-_client = Anthropic(
+client = Anthropic(
     api_key=os.environ.get("MINIMAX_API_KEY"),
     base_url="https://api.minimax.io/anthropic",
 )
-
 DEFAULT_MODEL = "MiniMax-M2.5"
-DEFAULT_MAX_TOKENS = 1024
-
-# Direct client access for tools that call MiniMax independently (e.g. quant_analyst)
-minimax_client = _client
-
-
-def chat(messages: list, system: str, tools: list, model: str = DEFAULT_MODEL, max_tokens: int = DEFAULT_MAX_TOKENS):
-    return _client.messages.create(
-        system=system,
-        messages=messages,
-        tools=tools,
-        model=model,
-        max_tokens=max_tokens,
-    )
+DEFAULT_MAX_TOKENS = 2048

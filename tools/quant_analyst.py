@@ -1,19 +1,15 @@
 import logging
 
-from models.minimax import minimax_client
+from models.minimax import client, DEFAULT_MODEL, DEFAULT_MAX_TOKENS
 
 log = logging.getLogger(__name__)
 
 
-# def quant_analyst(query: str) -> str:
-# # ant.messages.create(....)
-#     return "Quantitative analyst"
-
-
 def quant_analysis_summary(content: str, instructions: str) -> str:
-    response = minimax_client.messages.create(
-        model="MiniMax-M2.5",
-        max_tokens=1000,
+    log.debug("🧠 MiniMax input | instructions: %s\n--- content ---\n%s", instructions, content)
+    response = client.messages.create(
+        model=DEFAULT_MODEL,
+        max_tokens=DEFAULT_MAX_TOKENS,
         system=(
             "You are a financial data extractor. You are given the raw text content of a webpage "
             "and a specific extraction instruction. Your job is to extract exactly what is requested "
@@ -28,7 +24,6 @@ def quant_analysis_summary(content: str, instructions: str) -> str:
             }
         ]
     )
-    log.debug("🧠 MiniMax input | instructions: %s\n--- content ---\n%s", instructions, content)
     for block in response.content:
         if block.type == "thinking":
             log.info("[quant_analyst] 💭 thinking:\n%s", block.thinking)
